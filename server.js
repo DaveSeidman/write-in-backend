@@ -12,7 +12,11 @@ const io = new Server(server, {
   }
 });
 
-app.use(cors());
+app.use(cors({
+  origin: ['https://daveseidman.github.io'],
+  methods: ['GET', 'POST'],
+}));
+
 app.get('/', (req, res) => {
   res.send('Socket server running.');
 });
