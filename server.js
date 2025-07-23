@@ -19,28 +19,21 @@ app.get('/', (req, res) => {
 
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
+  socket.join('beauty1');
 
-  // Handle room join based on query param
-  const { role } = socket.handshake.query;
-
-  if (role === 'question') {
-    socket.join('question');
-  } else if (role === 'admin') {
-    socket.join('admin');
-  } else if (role === 'results') {
-    socket.join('results');
-  }
-
-  // Handle submissions from /question clients
   socket.on('submit', (data) => {
     console.log('Received submission:', data);
-    io.to('admin').emit('submit', data); // Forward to /admin clients
+    io.to('beauty1').emit('submit', data);
   });
 
-  // Handle approvals from /admin clients
   socket.on('approve', (data) => {
     console.log('Approved data:', data);
-    io.to('results').emit('approved', data); // Forward to /results clients
+    io.to('beauty1').emit('approved', data);
+  });
+
+  socket.on('replay-test', (data) => {
+    console.log('Replay test event received:', data);
+    io.to('beauty1').emit('replay-test', data); // forward it for testing
   });
 
   socket.on('disconnect', () => {
