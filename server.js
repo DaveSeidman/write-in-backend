@@ -7,7 +7,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*', // Change to your frontend origin if needed
+    origin: 'https://daveseidman.github.io', // Change to your frontend origin if needed
     methods: ['GET', 'POST']
   }
 });
@@ -26,8 +26,8 @@ io.on('connection', (socket) => {
   socket.join('beauty1');
 
   socket.on('submit', (data) => {
-    console.log('Received submission:', data);
-    io.to('beauty1').emit('submit', data);
+    console.log('Received submission:', data.length);
+    // io.to('beauty1').emit('submit', data);
   });
 
   socket.on('approve', (data) => {
