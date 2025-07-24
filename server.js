@@ -65,6 +65,11 @@ io.on('connection', (socket) => {
     socket.emit('allsubmissions', allSubmissions);
   }
 
+  if (role === 'results') {
+    const approved = allSubmissions.filter(s => s.approved);
+    socket.emit('approvedsubmissions', approved);
+  }
+
   socket.on('submit', (data) => {
     const timestamp = Date.now();
     const submission = {
