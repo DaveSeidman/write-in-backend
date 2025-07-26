@@ -63,6 +63,30 @@ io.on('connection', (socket) => {
   if (role === 'admin') {
     console.log('📤 Sending all submissions to admin');
     socket.emit('allsubmissions', allSubmissions);
+
+    socket.on('clear', () => {
+      console.log('🧹 Clearing all submissions...');
+
+      const files = fs.readdirSync(SUBMISSIONS_DIR).filter(f => f.endsWith('.json'));
+      files.forEach(file => {
+        const filepath = path.join(SUBMISSIONS_DIR, file);
+        try {
+          fs.unlinkSync(filepath);
+          console.log(`🗑️ Deleted ${file}`);
+        } catch (err) {
+          console.error(`❌ Failed to delete ${file}:`, err);
+        }
+      });
+
+      allSubmissions = [];
+
+      // Broadcast to all connected roles
+      io.to('beauty1').emit('allsubmissions', []);
+      io.to('beauty1').emit('approvedsubmissions', []);
+
+      console.log('✅ All submissions cleared and update broadcasted.');
+    });
+
   }
 
   if (role === 'results') {
