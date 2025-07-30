@@ -60,9 +60,45 @@ io.on('connection', (socket) => {
   const role = socket.handshake.query?.role;
   console.log(`🔍 Role: ${role}`);
 
+  // question client
+  if (role === 'question') {
+    socket.on('submit', (data) => {
+      const timestamp = Date.now();
+      const submission = {
+        timestamp,
+        data,
+        approved: false,
+        denied: false
+      };
+
+      console.log('📥 Received submission:', timestamp);
+      io.to('beauty1').emit('submission', submission);
+
+      const filename = `submission-${timestamp}.json`;
+      const filepath = path.join(SUBMISSIONS_DIR, filename);
+      fs.writeFile(filepath, JSON.stringify(submission, null, 2), (err) => {
+        if (err) {
+          console.error('❌ Failed to save submission:', err);
+        } else {
+          console.log(`💾 Saved submission to ${filename}`);
+          allSubmissions.push(submission);
+        }
+      });
+    });
+  }
+
+  // admin client
   if (role === 'admin') {
     console.log('📤 Sending all submissions to admin');
     socket.emit('allsubmissions', allSubmissions);
+
+    socket.on('approve', (timestamp) => {
+      updateApprovalStatus(timestamp, { approved: true, denied: false });
+    });
+
+    socket.on('deny', (timestamp) => {
+      updateApprovalStatus(timestamp, { approved: false, denied: true });
+    });
 
     socket.on('clear', () => {
       console.log('🧹 Clearing all submissions...');
@@ -87,44 +123,18 @@ io.on('connection', (socket) => {
       console.log('✅ All submissions cleared and update broadcasted.');
     });
 
-  }
+    socket.on('reset', () => {
+      io.to('beauty1').emit('reset');
+    })
 
+
+  }
+  // results client
   if (role === 'results') {
     const approved = allSubmissions.filter(s => s.approved);
     socket.emit('approvedsubmissions', approved);
   }
 
-  socket.on('submit', (data) => {
-    const timestamp = Date.now();
-    const submission = {
-      timestamp,
-      data,
-      approved: false,
-      denied: false
-    };
-
-    console.log('📥 Received submission:', timestamp);
-    io.to('beauty1').emit('submission', submission);
-
-    const filename = `submission-${timestamp}.json`;
-    const filepath = path.join(SUBMISSIONS_DIR, filename);
-    fs.writeFile(filepath, JSON.stringify(submission, null, 2), (err) => {
-      if (err) {
-        console.error('❌ Failed to save submission:', err);
-      } else {
-        console.log(`💾 Saved submission to ${filename}`);
-        allSubmissions.push(submission);
-      }
-    });
-  });
-
-  socket.on('approve', (timestamp) => {
-    updateApprovalStatus(timestamp, { approved: true, denied: false });
-  });
-
-  socket.on('deny', (timestamp) => {
-    updateApprovalStatus(timestamp, { approved: false, denied: true });
-  });
 
   socket.on('disconnect', () => {
     console.log('❌ Client disconnected:', socket.id);
