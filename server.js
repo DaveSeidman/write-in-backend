@@ -123,8 +123,9 @@ io.on('connection', (socket) => {
       console.log('✅ All submissions cleared and update broadcasted.');
     });
 
-    socket.on('reset', () => {
-      io.to('beauty1').emit('reset');
+    socket.on('restart', () => {
+      console.log('restarting');
+      io.to('beauty1').emit('restart');
     })
 
 
