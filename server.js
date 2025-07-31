@@ -98,8 +98,8 @@ io.on('connection', (socket) => {
       updateApprovalStatus(timestamp, { approved: false });
     });
 
-    socket.on('clear', () => {
-      console.log('🧹 Clearing all submissions...');
+    socket.on('deleteAll', () => {
+      console.log('🧹 Deleting all submissions...');
 
       const files = fs.readdirSync(SUBMISSIONS_DIR).filter(f => f.endsWith('.json'));
       files.forEach(file => {
@@ -121,9 +121,14 @@ io.on('connection', (socket) => {
       console.log('✅ All submissions cleared and update broadcasted.');
     });
 
-    socket.on('restart', () => {
-      console.log('restarting');
-      io.to('beauty1').emit('restart');
+    socket.on('clear', () => {
+      console.log('clearing walls');
+      io.to('beauty1').emit('clear')
+    })
+
+    socket.on('start', () => {
+      console.log('starting');
+      io.to('beauty1').emit('start');
     })
 
 
