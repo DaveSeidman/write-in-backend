@@ -67,8 +67,6 @@ io.on('connection', (socket) => {
       const submission = {
         timestamp,
         data,
-        approved: false,
-        denied: false
       };
 
       console.log('📥 Received submission:', timestamp);
@@ -93,11 +91,11 @@ io.on('connection', (socket) => {
     socket.emit('allsubmissions', allSubmissions);
 
     socket.on('approve', (timestamp) => {
-      updateApprovalStatus(timestamp, { approved: true, denied: false });
+      updateApprovalStatus(timestamp, { approved: true });
     });
 
     socket.on('deny', (timestamp) => {
-      updateApprovalStatus(timestamp, { approved: false, denied: true });
+      updateApprovalStatus(timestamp, { approved: false });
     });
 
     socket.on('clear', () => {
@@ -118,7 +116,7 @@ io.on('connection', (socket) => {
 
       // Broadcast to all connected roles
       io.to('beauty1').emit('allsubmissions', []);
-      io.to('beauty1').emit('approvedsubmissions', []);
+      // io.to('beauty1').emit('approvedsubmissions', []);
 
       console.log('✅ All submissions cleared and update broadcasted.');
     });
@@ -132,8 +130,8 @@ io.on('connection', (socket) => {
   }
   // results client
   if (role === 'results') {
-    const approved = allSubmissions.filter(s => s.approved);
-    socket.emit('approvedsubmissions', approved);
+    // const approved = allSubmissions.filter(s => s.approved);
+    socket.emit('allsubmissions', allSubmissions);
   }
 
 
@@ -161,13 +159,13 @@ function updateApprovalStatus(timestamp, { approved, denied }) {
     try {
       const submission = JSON.parse(content);
       submission.approved = approved;
-      submission.denied = denied;
+      // submission.denied = denied;
 
       fs.writeFile(filepath, JSON.stringify(submission, null, 2), (err) => {
         if (err) {
           console.error('❌ Failed to update submission:', err);
         } else {
-          console.log(`✅ Updated ${filename}: approved=${approved}, denied=${denied}`);
+          console.log(`✅ Updated ${filename}: approved=${approved}`);
 
           // update in-memory cache
           const index = allSubmissions.findIndex(s => s.timestamp === submission.timestamp);
