@@ -10,9 +10,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "archiver": "^7.0.1",
+    "canvas": "^3.1.2",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "nodemon": "^3.1.10",
+    "perfect-freehand": "^1.2.2",
     "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "dotenv": "^17.2.1"
   }
 }
