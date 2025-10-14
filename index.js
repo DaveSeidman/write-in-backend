@@ -141,7 +141,7 @@ app.get('/rendered-submissions.zip', (req, res) => {
 
 io.on('connection', (socket) => {
   console.log('✅ Client connected:', socket.id);
-  socket.join('beauty1');
+  socket.join('writein');
 
   const role = socket.handshake.query?.role;
   console.log(`🔍 Role: ${role}`);
@@ -152,7 +152,7 @@ io.on('connection', (socket) => {
       const submission = { timestamp, data };
 
       console.log('📥 Received submission:', timestamp);
-      io.to('beauty1').emit('submission', submission);
+      io.to('writein').emit('submission', submission);
 
       const filename = `submission-${timestamp}.json`;
       const filepath = path.join(SUBMISSIONS_DIR, filename);
@@ -179,6 +179,32 @@ io.on('connection', (socket) => {
       updateApprovalStatus(timestamp, { approved: false });
     });
 
+    // 🆕 DELETE HANDLER
+    socket.on('delete', (timestamp) => {
+      const filename = `submission-${timestamp}.json`;
+      const filepath = path.join(SUBMISSIONS_DIR, filename);
+
+      console.log(`🗑️ Delete requested for submission: ${filename}`);
+
+      try {
+        if (fs.existsSync(filepath)) {
+          fs.unlinkSync(filepath);
+          console.log(`✅ Deleted file: ${filename}`);
+        } else {
+          console.warn(`⚠️ File not found: ${filename}`);
+        }
+
+        // Remove from in-memory list
+        allSubmissions = allSubmissions.filter(s => s.timestamp !== timestamp);
+
+        // Notify all connected clients with updated list
+        io.to('writein').emit('allsubmissions', allSubmissions);
+        console.log('📡 Broadcasted updated submissions after deletion.');
+      } catch (err) {
+        console.error(`❌ Failed to delete submission ${filename}:`, err);
+      }
+    });
+
     socket.on('deleteAll', () => {
       console.log('🧹 Deleting all submissions...');
       const files = fs.readdirSync(SUBMISSIONS_DIR).filter(f => f.endsWith('.json'));
@@ -193,18 +219,18 @@ io.on('connection', (socket) => {
       });
 
       allSubmissions = [];
-      io.to('beauty1').emit('allsubmissions', []);
+      io.to('writein').emit('allsubmissions', []);
       console.log('✅ All submissions cleared and update broadcasted.');
     });
 
     socket.on('clear', () => {
       console.log('clearing walls');
-      io.to('beauty1').emit('clear');
+      io.to('writein').emit('clear');
     });
 
     socket.on('start', () => {
       console.log('starting');
-      io.to('beauty1').emit('start');
+      io.to('writein').emit('start');
     });
   }
 
@@ -247,7 +273,7 @@ function updateApprovalStatus(timestamp, { approved }) {
           if (index !== -1) {
             allSubmissions[index] = submission;
           }
-          io.to('beauty1').emit('submission-updated', submission);
+          io.to('writein').emit('submission-updated', submission);
         }
       });
     } catch (e) {
