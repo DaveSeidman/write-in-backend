@@ -1,11 +1,12 @@
 {
-  "name": "cocktail-generator-server",
+  "name": "write-in-backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon server.js --watch server.js"
+    "dev": "nodemon server.js --watch server.js",
+    "start": "node server.js"
   },
   "author": "",
   "license": "ISC",
