@@ -149,7 +149,7 @@ io.on('connection', (socket) => {
   if (role === 'question') {
     socket.on('submit', (data) => {
       const timestamp = Date.now();
-      const submission = { timestamp, data };
+      const submission = { timestamp, data, displayed: false };
 
       console.log('📥 Received submission:', timestamp);
       io.to('writein').emit('submission', submission);
@@ -177,6 +177,10 @@ io.on('connection', (socket) => {
 
     socket.on('deny', (timestamp) => {
       updateApprovalStatus(timestamp, { approved: false });
+    });
+
+    socket.on('unpublish', (timestamp) => {
+      updateSubmissionField(timestamp, { approved: false, displayed: false }, 'unpublish', ['results'], 'submission-updated', ['admin']);
     });
 
     // 🆕 DELETE HANDLER
@@ -236,6 +240,11 @@ io.on('connection', (socket) => {
 
   if (role === 'results') {
     socket.emit('allsubmissions', allSubmissions);
+
+    socket.on('displayed', (timestamp) => {
+      console.log('🎬 Received displayed event for submission:', timestamp);
+      updateSubmissionField(timestamp, { displayed: true }, 'submission-displayed', ['admin']);
+    });
   }
 
   socket.on('disconnect', () => {
@@ -274,6 +283,59 @@ function updateApprovalStatus(timestamp, { approved }) {
             allSubmissions[index] = submission;
           }
           io.to('writein').emit('submission-updated', submission);
+        }
+      });
+    } catch (e) {
+      console.error('❌ Failed to parse submission JSON:', e);
+    }
+  });
+}
+
+function updateSubmissionField(timestamp, fields, primaryEvent, primaryRoles, secondaryEvent = null, secondaryRoles = null) {
+  const filename = `submission-${timestamp}.json`;
+  const filepath = path.join(SUBMISSIONS_DIR, filename);
+
+  if (!fs.existsSync(filepath)) {
+    console.warn(`⚠️ Submission file not found: ${filename}`);
+    return;
+  }
+
+  fs.readFile(filepath, 'utf8', (err, content) => {
+    if (err) {
+      console.error('❌ Error reading file:', err);
+      return;
+    }
+
+    try {
+      const submission = JSON.parse(content);
+
+      // Update all specified fields
+      Object.assign(submission, fields);
+
+      fs.writeFile(filepath, JSON.stringify(submission, null, 2), (err) => {
+        if (err) {
+          console.error('❌ Failed to update submission:', err);
+        } else {
+          const fieldUpdates = Object.entries(fields).map(([k, v]) => `${k}=${v}`).join(', ');
+          console.log(`✅ Updated ${filename}: ${fieldUpdates}`);
+
+          // Update in-memory list
+          const index = allSubmissions.findIndex(s => s.timestamp === submission.timestamp);
+          if (index !== -1) {
+            allSubmissions[index] = submission;
+          }
+
+          // Emit primary event to specified roles
+          primaryRoles.forEach(() => {
+            io.to('writein').emit(primaryEvent, submission);
+          });
+
+          // Emit secondary event if specified
+          if (secondaryEvent && secondaryRoles) {
+            secondaryRoles.forEach(() => {
+              io.to('writein').emit(secondaryEvent, submission);
+            });
+          }
         }
       });
     } catch (e) {
