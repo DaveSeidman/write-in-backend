@@ -180,7 +180,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('unpublish', (timestamp) => {
-      updateSubmissionField(timestamp, { approved: false, displayed: false }, 'unpublish', ['results'], 'submission-updated', ['admin']);
+      updateSubmissionField(timestamp, { approved: null, displayed: false }, 'unpublish', ['results'], 'submission-updated', ['admin']);
     });
 
     // 🆕 DELETE HANDLER
